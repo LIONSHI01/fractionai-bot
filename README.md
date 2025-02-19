@@ -42,7 +42,14 @@ your_private_key
 
 ```json
 {
-  "ENTRYFEE": 0.01
+  "fee": 0.01,
+  "antiCaptchaKey": "your_anti_captcha_key",
+  "twoCaptchaKey": "your_2captcha_api_key",
+  "geminiApiKey": "your_gemini_api_key",
+  "defaultSolver": "twocaptcha",
+  "pollingInterval": 10,
+  "retryDelay": 10000,
+  "maxRetries": 3
 }
 ```
 
