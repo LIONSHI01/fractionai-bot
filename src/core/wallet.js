@@ -3,6 +3,7 @@ import Network from "./network.js";
 import Tools from "../utils/tools.js";
 import Client from "../services/client.js";
 import Display from "../utils/display.js";
+import Solver from "../services/solvers/index.js";
 import fs from "fs/promises";
 
 const loadConfig = async () => {
@@ -23,13 +24,12 @@ class WalletManager extends Client {
     this.wallet = null;
     this.address = null;
     this.activeMatches = {};
-    this.sessionCount = 0;
-    this.lastSessionTime = null;
-    this.currentAgentIndex = 0;
+    this.solver = null;
   }
 
   async initialize() {
     this.config = await loadConfig();
+    this.solver = new Solver(this.config);
   }
 
   async connect() {
@@ -50,7 +50,7 @@ class WalletManager extends Client {
       }
 
       this.address = this.wallet.address;
-      await Tools.delay(1000, `Connected to ${this.address.slice(0, 6)}...${this.address.slice(-4)}`);
+      await Tools.delay(1000, `Connected to ${this.address}`);
     } catch (error) {
       throw error;
     }
@@ -58,7 +58,7 @@ class WalletManager extends Client {
 
   async getBalance() {
     try {
-      await Tools.delay(500, `Getting balance for ${this.address.slice(0, 6)}...${this.address.slice(-4)}`);
+      await Tools.delay(500, `Getting balance for ${this.address}`);
       const balance = ethers.formatEther(
         await this.provider.getBalance(this.address)
       );
@@ -107,14 +107,6 @@ class WalletManager extends Client {
         ) {
           return this.login(retryCount + 1, maxRetries);
         }
-
-        if (authResponse.status === 429) {
-          const waitTime = 60 * 1000;
-          Tools.log("Rate limit hit (429). Waiting 1 minute before retry...");
-          await Tools.delay(waitTime, "Waiting for rate limit cooldown...");
-          return this.login(retryCount, maxRetries);
-        }
-
         throw new Error(
           `Authentication failed: ${
             authResponse.data?.error || authResponse.status
@@ -130,14 +122,6 @@ class WalletManager extends Client {
       if (error.message.includes("502") && retryCount < maxRetries) {
         return this.login(retryCount + 1, maxRetries);
       }
-
-      if (error.message.includes("429")) {
-        const waitTime = 60 * 1000;
-        Tools.log("Rate limit hit (429). Waiting 1 minute before retry...");
-        await Tools.delay(waitTime, "Waiting for rate limit cooldown...");
-        return this.login(retryCount, maxRetries);
-      }
-
       throw new Error(`Login failed: ${error.message}`);
     }
   }
@@ -151,8 +135,6 @@ class WalletManager extends Client {
         "GET",
         this.token
       );
-
-      // console.log("Agentlist: ", response)
 
       if (response.status !== 200 || !response.data) {
         throw new Error("Failed to fetch agents");
@@ -216,73 +198,6 @@ class WalletManager extends Client {
     }
   }
 
-  async processAgents() {
-    if (this.agents.length === 0) {
-      await Tools.delay(
-        10000,
-        "No agents available. Please create an agent first"
-      );
-      throw new Error("No agents available");
-    }
-
-    if (
-      this.lastSessionTime &&
-      Date.now() - this.lastSessionTime >= 60 * 60 * 1000
-    ) {
-      this.sessionCount = 0;
-    }
-
-    if (this.sessionCount >= 6) {
-      const waitTime = 60 * 60 * 1000 - (Date.now() - this.lastSessionTime);
-      if (waitTime > 0) {
-        await Tools.delay(
-          waitTime,
-          `Session limit reached. Waiting for cooldown: ${Math.ceil(
-            waitTime / 60000
-          )} minutes`
-        );
-        this.sessionCount = 0;
-      }
-    }
-
-    for (let i = 0; i < this.agents.length; i++) {
-      const agentIndex = (this.currentAgentIndex + i) % this.agents.length;
-      const agent = this.agents[agentIndex];
-
-      for (const session of this.sessions) {
-        if (agent.sessionType.sessionType === session.sessionType.sessionType) {
-          if (!agent.automationEnabled && this.sessionCount < 6) {
-            try {
-              await this.startMatch(agent, session);
-              this.sessionCount++;
-              this.lastSessionTime = this.lastSessionTime || Date.now();
-              this.currentAgentIndex = (agentIndex + 1) % this.agents.length;
-            } catch (error) {
-              if (error.message.includes("maximum number of sessions")) {
-                this.sessionCount = 6;
-                this.lastSessionTime = Date.now();
-                throw error;
-              }
-              throw error;
-            }
-          }
-        }
-      }
-    }
-
-    let waitTime = 180;
-    for (const session of this.sessions) {
-      const duration =
-        session.sessionType.durationPerRound * session.sessionType.rounds;
-      if (duration < waitTime) waitTime = duration;
-    }
-
-    await Tools.delay(
-      waitTime * 1000,
-      `Processing completed. Waiting for ${Tools.msToTime(waitTime * 1000)}`
-    );
-  }
-
   async checkAgentStatus(agent) {
     try {
       const response = await this.fetch(
@@ -317,6 +232,14 @@ class WalletManager extends Client {
         `Starting match: Agent ${agent.name} - Session ${session.sessionType.name}`
       );
 
+      const nonceResponse = await this.fetch("/auth/nonce", "GET", this.token);
+      if (!nonceResponse.status === 200) {
+        throw new Error("Failed to get nonce and captcha");
+      }
+
+      Tools.log("Solving captcha...");
+      const captchaSolution = await this.solver.solve(nonceResponse.data.image);
+
       const response = await this.fetch(
         "/matchmaking/initiate",
         "POST",
@@ -326,6 +249,8 @@ class WalletManager extends Client {
           agentId: agent.id,
           entryFees: this.config.fee,
           sessionTypeId: session.sessionType.id,
+          nonce: nonceResponse.data.nonce,
+          captchaText: captchaSolution,
         }
       );
 
@@ -336,16 +261,26 @@ class WalletManager extends Client {
           500,
           `Match started: ${agent.name} - ${session.sessionType.name}`
         );
+        this.solver.reportGood();
         return true;
       } else if (response.data?.error?.includes("already in queue")) {
         this.activeMatches[agent.id] = true;
         Tools.updateDisplay(this);
         Tools.log(`Agent ${agent.name} is already in active match`);
         return false;
+      } else if (response.data?.error?.includes("invalid captcha")) {
+        Tools.log("Invalid captcha solution, retrying...");
+        this.solver.reportBad();
+        return await this.startMatch(agent, session);
       } else {
         throw new Error(response.data?.error || "Failed to start match");
       }
     } catch (error) {
+      if (error.message.includes("captcha")) {
+        Tools.log("Captcha error, retrying match start...");
+        await Tools.delay(2000, "Waiting before retry");
+        return await this.startMatch(agent, session);
+      }
       throw error;
     }
   }
@@ -436,3 +371,4 @@ class WalletManager extends Client {
 }
 
 export default WalletManager;
+
