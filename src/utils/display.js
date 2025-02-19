@@ -33,7 +33,7 @@ class Display {
 
     this.grid.set(1, 0, 1, 12, blessed.box, {
       content:
-        " https://x.com/qklxsqf ",
+        "X； https://x.com/qklxsqf ",
       align: "center",
       style: {
         fg: "white",
