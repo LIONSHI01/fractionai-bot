@@ -33,7 +33,7 @@ class Display {
 
     this.grid.set(1, 0, 1, 12, blessed.box, {
       content:
-        "Codeberg: https://codeberg.org/Galkurta | Telegram: https://t.me/galkurtarchive",
+        " https://x.com/qklxsqf ",
       align: "center",
       style: {
         fg: "white",
