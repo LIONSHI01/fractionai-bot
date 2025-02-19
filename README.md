@@ -20,7 +20,8 @@ A bot for automating battles in Fraction AI game.
 1. Clone this repository
 
 ```bash
-git https://github.com/ziqing888/fractionai-bot
+git clone https://github.com/ziqing888/fractionai-bot
+
 cd fractionai-bot
 ```
 
