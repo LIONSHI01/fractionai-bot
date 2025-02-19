@@ -53,7 +53,30 @@ your_private_key
 }
 ```
 
-Available entry fees: `0.01`, `0.001`, `0.0001` ETH
+Notes:
+
+Available entry fees: 0.01, 0.001, 0.0001 ETH
+Available solvers: anticaptcha, twocaptcha, gemini
+At least one solver API key must be provided
+Polling interval only used for 2Captcha solver
+
+## Required Services
+Choose Your Captcha Solver
+Option 1: 2Captcha (Recommended)
+Register at 2Captcha
+Get your API key
+Add the API key as twoCaptchaKey in config.json
+Set defaultSolver to "twocaptcha"
+Optionally adjust pollingInterval (default: 10 seconds)
+Option 2: Anti-Captcha
+Register at Anti-Captcha
+Get your API key
+Add the API key as antiCaptchaKey in config.json
+Set defaultSolver to "anticaptcha"
+Option 3: Gemini AI
+Get your Gemini API key from Google AI Studio
+Add the API key as geminiApiKey in config.json
+Set defaultSolver to "gemini"
 
 ## Usage
 
