@@ -126,7 +126,8 @@ yarn start
 ### 克隆仓库
 
 ```bash
-git https://github.com/ziqing888/fractionai-bot
+git clone https://github.com/ziqing888/fractionai-bot
+
 cd fractionai-bot
 ```
 ### 安装依赖
