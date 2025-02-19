@@ -57,8 +57,8 @@ class Solver {
           `Failed to download image: ${imageResponse.statusText}`
         );
       }
-      const imageBuffer = await imageResponse.buffer();
-      const base64Image = imageBuffer.toString("base64");
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const base64Image = Buffer.from(imageBuffer).toString("base64");
       Tools.log("Image converted to base64");
       return base64Image;
     } catch (error) {
@@ -110,3 +110,4 @@ class Solver {
 }
 
 export default Solver;
+
