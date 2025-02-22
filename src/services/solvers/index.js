@@ -82,7 +82,10 @@ class Solver {
         throw new Error(`Solver ${solverMethod} is not available`);
       }
 
-      return await solver.solve(base64Image);
+      const result = await solver.solve(base64Image);
+      const upperCaseResult = result.toUpperCase();
+
+      return upperCaseResult;
     } catch (error) {
       Tools.log(`Captcha solving error: ${error.message}`);
       throw error;
@@ -110,4 +113,5 @@ class Solver {
 }
 
 export default Solver;
+
 
