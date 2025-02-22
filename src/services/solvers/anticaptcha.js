@@ -31,8 +31,9 @@ class AntiCaptchaSolver {
         throw new Error("Failed to solve captcha with AntiCaptcha");
       }
 
-      Tools.log(`AntiCaptcha solved captcha: ${result}`);
-      return result;
+      const upperCaseResult = result.toUpperCase();
+      Tools.log(`AntiCaptcha solved captcha: ${upperCaseResult}`);
+      return upperCaseResult;
     } catch (error) {
       Tools.log(`AntiCaptcha solving error: ${error.message}`);
       throw error;
@@ -57,3 +58,4 @@ class AntiCaptchaSolver {
 }
 
 export default AntiCaptchaSolver;
+
