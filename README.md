@@ -20,7 +20,8 @@ A bot for automating battles in Fraction AI game.
 1. Clone this repository
 
 ```bash
-git https://github.com/ziqing888/fractionai-bot
+git clone https://github.com/ziqing888/fractionai-bot
+
 cd fractionai-bot
 ```
 
@@ -42,11 +43,60 @@ your_private_key
 
 ```json
 {
-  "ENTRYFEE": 0.01
+  "fee": 0.01,
+  "antiCaptchaKey": "your_anti_captcha_key",
+  "twoCaptchaKey": "your_2captcha_api_key",
+  "geminiApiKey": "your_gemini_api_key",
+  "defaultSolver": "twocaptcha",
+  "pollingInterval": 10,
+  "retryDelay": 10000,
+  "maxRetries": 3
 }
 ```
 
-Available entry fees: `0.01`, `0.001`, `0.0001` ETH
+Notes:
+
+Available entry fees: 0.01, 0.001, 0.0001 ETH
+
+Available solvers: anticaptcha, twocaptcha, gemini
+
+At least one solver API key must be provided
+
+Polling interval only used for 2Captcha solver
+
+## Required Services
+
+Choose Your Captcha Solver
+
+Option 1: 2Captcha (Recommended)
+
+Register at 2Captcha
+
+Get your API key
+
+Add the API key as twoCaptchaKey in config.json
+
+Set defaultSolver to "twocaptcha"
+
+Optionally adjust pollingInterval (default: 10 seconds)
+
+Option 2: Anti-Captcha
+
+Register at Anti-Captcha
+
+Get your API key
+
+Add the API key as antiCaptchaKey in config.json
+
+Set defaultSolver to "anticaptcha"
+
+Option 3: Gemini AI
+
+Get your Gemini API key from Google AI Studio
+
+Add the API key as geminiApiKey in config.json
+
+Set defaultSolver to "gemini"
 
 ## Usage
 
@@ -77,7 +127,8 @@ yarn start
 ### 克隆仓库
 
 ```bash
-git https://github.com/ziqing888/fractionai-bot
+git clone https://github.com/ziqing888/fractionai-bot
+
 cd fractionai-bot
 ```
 ### 安装依赖
@@ -93,10 +144,61 @@ your_private_key
 ### 编辑 config.json 文件
 ```json
 {
-  "ENTRYFEE": 0.01
+  "fee": 0.01,
+  "antiCaptchaKey": "your_anti_captcha_key",
+  "twoCaptchaKey": "your_2captcha_api_key",
+  "geminiApiKey": "your_gemini_api_key",
+  "defaultSolver": "twocaptcha",
+  "pollingInterval": 10,
+  "retryDelay": 10000,
+  "maxRetries": 3
 }
+
 ```
-### 可用的报名费用：0.01，0.001，0.0001 ETH
+注意事项：
+
+可用的入场费用：0.01，0.001，0.0001 ETH
+
+可用的解算器：anticaptcha，twocaptcha，gemini
+
+必须提供至少一个解算器的 API 密钥
+
+pollingInterval 仅适用于 2Captcha 解算器
+
+所需服务
+
+选择你的验证码解算器
+
+选项 1：2Captcha（推荐）
+
+在 [2Captcha](https://2captcha.com/) 注册
+
+获取你的 API 密钥
+
+将 API 密钥添加为 twoCaptchaKey 在 config.json 中
+
+将 defaultSolver 设置为 "twocaptcha"
+
+可选：调整 pollingInterval（默认：10 秒）
+
+选项 2：Anti-Captcha
+
+在 [Anti-Captcha](https://anti-captcha.com/) 注册
+
+获取你的 API 密钥
+
+将 API 密钥添加为 antiCaptchaKey 在 config.json 中
+
+将 defaultSolver 设置为 "anticaptcha"
+
+选项 3：Gemini AI
+
+从 [Google AI Studio ](https://aistudio.google.com/app/apikey)获取你的 Gemini API 密钥
+
+将 API 密钥添加为 geminiApiKey 在 config.json 中
+
+将 defaultSolver 设置为 "gemini"
+
 ## 运行机器人
 ```bash
 npm start
