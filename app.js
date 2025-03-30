@@ -3,6 +3,8 @@ import WalletManager from "./src/core/wallet.js";
 import Tools from "./src/utils/tools.js";
 import Display from "./src/utils/display.js";
 
+const MAX_SESSION_COUNT = 2;
+
 async function loadKeys() {
   try {
     const data = await fs.readFile("./data.txt", "utf8");
@@ -39,7 +41,7 @@ async function runWallet(key, lastAgentIndex = 0) {
   const activeAgents = new Set();
 
   try {
-    if (lastSessionTime && sessionCount >= 6) {
+    if (lastSessionTime && sessionCount >= MAX_SESSION_COUNT) {
       await handleSessionLimit(lastSessionTime);
       sessionCount = 0;
       activeAgents.clear();
@@ -81,7 +83,11 @@ async function runWallet(key, lastAgentIndex = 0) {
       }
     }
 
-    for (let i = 0; i < wallet.agents.length && sessionCount < 6; i++) {
+    for (
+      let i = 0;
+      i < wallet.agents.length && sessionCount < MAX_SESSION_COUNT;
+      i++
+    ) {
       const agentIndex = (currentAgentIndex + i) % wallet.agents.length;
       const agent = wallet.agents[agentIndex];
 
@@ -106,9 +112,11 @@ async function runWallet(key, lastAgentIndex = 0) {
                 activeAgents.add(agent.id);
                 currentAgentIndex = (agentIndex + 1) % wallet.agents.length;
 
-                Tools.log(`Sessions used: ${sessionCount}/6`);
+                Tools.log(
+                  `Sessions used: ${sessionCount}/${MAX_SESSION_COUNT}`
+                );
 
-                if (sessionCount >= 6) {
+                if (sessionCount >= MAX_SESSION_COUNT) {
                   Tools.log("Session limit reached, starting cooldown");
                   await handleSessionLimit(lastSessionTime);
                   sessionCount = 0;
@@ -189,4 +197,3 @@ startBot().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-
